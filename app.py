@@ -4,9 +4,11 @@ import plotly.express as px
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import date
-
 from Charts import *
-# Los componentes. Ya los conocen
+
+
+
+
 app = Dash(__name__, external_stylesheets=[dbc.themes.VAPOR])
 
 
@@ -25,16 +27,18 @@ mytitle = dcc.Markdown(children='# Terremotos')
 
 
 mapgraph = dcc.Graph(figure={},
-            style={'width': '100%', 'display': 'inline-block'})
+            style={'width': '100%', 'display': 'inline-block'},
+            id="map")
 histograph = dcc.Graph(figure=HistChart(),
             style={'width': '50%', 'display': 'inline-block'})
 scattergraph = dcc.Graph(figure=ScatterChart()
                          ,
             style={'width': '50%', 'display': 'inline-block'})
 
-linegraph = dcc.Graph(figure=LineChart(),
-            style={'width': '50%', 'display': 'inline-block'}                      
-)
+linegraph = dcc.Graph(figure={},
+            style={'width': '50%', 'display': 'inline-block'},
+            id="line")
+
 piegraph = dcc.Graph(
     figure=PieChart(),
     style={'width': '50%', 'display': 'inline-block'}
@@ -43,22 +47,16 @@ piegraph = dcc.Graph(
 
 
 checkbox=dcc.Checklist(
-    ['Baja Intensidad', 'Media Intensidad', 'Alta Intensidad'],
-    ['Baja Intensidad', 'Media Intensidad', 'Alta Intensidad'],
-    inline=True
+    ['Low', 'Mid', 'High'],
+    ['Low', 'Mid', 'High'],
+    inline=True,
+    id="checklist"
 )
 
 
 dropdown = dcc.Dropdown(options=['Baja Intensidad', 'Media Intensidad', 'Alta Intensidad'],
                         value='Baja Intensidad',  # valor inicialmente desplegado
                         clearable=False)
-
-
-
-
-
-
-
 
 
 # Personalizar layout
@@ -68,7 +66,7 @@ dropdown = dcc.Dropdown(options=['Baja Intensidad', 'Media Intensidad', 'Alta In
 
 app.layout = html.Div([
     mytitle,
-
+    checkbox,
     html.Div([
         piegraph,
         linegraph
@@ -77,7 +75,7 @@ app.layout = html.Div([
     html.Div([
         mapgraph,
 
-        dropdown
+        
     ]),
 
     html.Div([
@@ -90,70 +88,11 @@ app.layout = html.Div([
 
 
 
-
-
-
-
-
-
-
-""" # Callback para interactuar desde el dropdown al gráfico
 @app.callback(
-    Output(linegraph, component_property='figu  re'),
-    Input(datepicker, component_property='value')
+    [Output("line", "figure"), Output("map", "figure")],
+    Input("checklist", "value")
 )
-def update_line(user_input):  # argumento desde el component_property del Input
-    
-    
-    df_earthquakes = pd.read_csv('all_week.csv',skipfooter=3, engine='python')
-    #start_date=pd.to.datetime[user_input]
-    #end_date=pd.to.datetime[]
-
-    
-    
-    config = {'scrollZoom': True}
-    fig = px.line(df_earthquakes, x="time", y="mag", title='El hombre pie', markers=True)
-    
-
-    return fig  """
-
-
-""" # Callback para interactuar desde el dropdown al gráfico
-@app.callback(
-    Output(histograph, component_property='figure'),
-    Input(datepicker2, component_property='value')
-)
-def update_line(user_input):  # argumento desde el component_property del Input
-    
-    
-    df_earthquakes = pd.read_csv('all_week.csv',skipfooter=3, engine='python')
-    # Convertir la columna 'time' en formato de fecha y extraer el componente de fecha
-    df_earthquakes['time'] = pd.to_datetime(df_earthquakes['time'])
-    df_earthquakes['date'] = df_earthquakes['time'].dt.date
-
-    # Calcular la cantidad de terremotos por día
-    daily_counts = df_earthquakes['date'].value_counts().sort_index()
-
-    # Crear el histograma utilizando Plotly
-    fig = px.histogram(daily_counts, x='date', nbins=len(daily_counts))
-
-    # Personalizar el diseño del histograma
-    fig.update_layout(
-        title='Cantidad de terremotos por día',
-        xaxis_title='Fecha',
-        yaxis_title='Cantidad de terremotos',
-    )
-    
-
-    return fig
- """
-
-@app.callback(
-    Output(mapgraph, component_property='figure'),
-    Input(dropdown, component_property='value')
-)
-def update_map(user_input):  
-    
+def update_by_checklist(intensities):
     df_earthquakes = pd.read_csv('all_week.csv',skipfooter=3, engine='python')
     
     low_threshold = 3.0
@@ -164,24 +103,34 @@ def update_map(user_input):
     intensity_counts = df_earthquakes['intensity'].value_counts()
     df_intensity = intensity_counts.reset_index()
     
-    df_merged = pd.merge(df_earthquakes[['latitude', 'longitude', 'intensity','mag']], df_intensity, on='intensity')
     
     
     
-    if user_input == 'Baja Intensidad':
-        fig = px.scatter_geo(df_merged.loc[df_merged['intensity'] == 'Low'], lat="latitude", lon="longitude",color="mag",
+    df_mag = pd.merge(df_earthquakes[['intensity','mag','time']], df_intensity, on='intensity')
+    df_lat = pd.merge(df_earthquakes[['latitude', 'longitude', 'intensity','mag']], df_intensity, on='intensity')
+    
+    
+    
+    
+    filtered_df_mag = df_mag[df_mag['intensity'].isin(intensities)]
+    
+    filtered_df_lat = df_lat[df_mag['intensity'].isin(intensities)]
+    
+    fig1 = px.line(
+        filtered_df_mag,
+        x="time",
+        y="mag",
+        line_group="intensity",
+        color="intensity",
+        title='Magnitud de los Terremotos ocurridos entre el 9 junio y el 16 de junio',
+        markers=True,
+        height=300
+    )
+    fig2=px.scatter_geo(filtered_df_lat, lat="latitude", lon="longitude",color="mag",
                      color_continuous_scale=px.colors.cyclical.IceFire, size_max=15)
+    
+    return fig1,fig2
 
-    elif user_input == 'Media Intensidad':
-        fig = px.scatter_geo(df_merged.loc[df_merged['intensity'] == 'Mid'], lat="latitude", lon="longitude",color="mag",
-                     color_continuous_scale=px.colors.cyclical.IceFire, size_max=15)
-
-    elif user_input == 'Alta Intensidad':
-        fig = px.scatter_geo(df_merged.loc[df_merged['intensity'] == 'High'], lat="latitude", lon="longitude",color="mag",
-                     color_continuous_scale=px.colors.cyclical.IceFire, size_max=15)
-    
-    
-    return fig 
 
 
 
