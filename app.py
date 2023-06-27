@@ -63,7 +63,10 @@ dropdown_options = [{"label": "All Countries", "value": "All Countries"}] + [
 ]
 
 countries_dropdown = dcc.Dropdown(
-    options=dropdown_options, value="All Countries", id="countries-dropdown"
+    options=dropdown_options,
+    value="All Countries",
+    style={"color": "black"},
+    id="countries-dropdown",
 )
 
 years_slider = dcc.RangeSlider(
@@ -101,10 +104,16 @@ app.layout = html.Div(
         dcc.Markdown(children="## Magnitud"),
         html.Div(
             [
-                countries_dropdown,
-                line_chart,
-                bubble_map,
-                years_slider,
+                dcc.Loading(
+                    id="loading-component",
+                    type="circle",
+                    children=[
+                        countries_dropdown,
+                        line_chart,
+                        bubble_map,
+                        years_slider,
+                    ],
+                )
             ]
         ),
         dcc.Markdown(children="## Profundidad"),
@@ -153,24 +162,19 @@ def update_bubble_map(selected_country, years_range):
             )
         ]
 
-    fig = px.scatter_geo(
+    bubble_map_fig = px.scatter_geo(
         filtered_df,
         lat="latitude",
         lon="longitude",
         color="magnitude",
-        # size="magnitude",
+        size="magnitude",
+        title=f"Earthquakes in {selected_country} from {years_range[0]} to {years_range[1]}",
         hover_data=["country", "date_time"],
         color_continuous_scale=px.colors.sequential.Oranges,
         size_max=15,
     )
 
-    title = (
-        f"Earthquakes in {selected_country} from {years_range[0]} to {years_range[1]}"
-    )
-
-    fig.update_layout(title=title)
-
-    fig2 = px.line(
+    scatter_plot_fig = px.line(
         filtered_df,
         x="date_time",
         y="magnitude",
@@ -180,7 +184,7 @@ def update_bubble_map(selected_country, years_range):
         markers=True,
         height=300,
     )
-    return fig, fig2
+    return bubble_map_fig, scatter_plot_fig
 
 
 @app.callback(
@@ -231,14 +235,14 @@ def update_bar_chart(selected_country, years_range, selected_depth):
     if df_rearranged_counts_per_year.empty:
         fig = px.bar()
         fig.update_layout(
-            title="Empty Bar Chart",
+            title=f"Number of earthquakes according to the depth label in {selected_country} from {years_range[0]} to {years_range[1]}",
         )
     else:
         fig = px.bar(
             df_rearranged_counts_per_year,
             x=df_rearranged_counts_per_year.index,
             y=selected_columns,
-            title="Number of Earthquakes per Year",
+            title=f"Number of earthquakes according to the depth label in {selected_country} from {years_range[0]} to {years_range[1]}",
             labels={"x": "Year", "y": "Count"},
             barmode="stack",
         )
@@ -286,7 +290,7 @@ def update_scatter_chart(selected_country,selected_depth,years_range):
         filtered_df,
         x="depth",
         y="magnitude",
-        title=f"Distribution of the earthquakes in {selected_country} from {years_range[0]} to {years_range[1]} per depth label",
+       title=f"Distribution of earthquakes according to depth label in {selected_country} from {years_range[0]} to {years_range[1]} per depth label",
         color="depth_label",
     )
 
