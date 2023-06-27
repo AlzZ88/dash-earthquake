@@ -36,21 +36,16 @@ line_chart = dcc.Graph(
 
 pie_chart = dcc.Graph(
     id="pie-chart",
-    style={"width": "45%", "display": "inline-block"},
+    style={"width": "50%", "display": "inline-block"},
 )
 bar_chart = dcc.Graph(
     id="bar-chart",
     style={"width": "50%", "display": "inline-block"},
 )
 
-""" bubble_map = dcc.Graph(
-    id="bubble-map",
-    style={"width": "100%", "display": "inline-block"},
-) """
-
 bubble_map = dcc.Graph(
     id="bubble-map",
-    style={"width": "45%", "display": "inline-block"},
+    style={"width": "50%", "display": "inline-block"},
 )
 
 ##############################
@@ -58,7 +53,15 @@ bubble_map = dcc.Graph(
 ##############################
 
 depth_checklist = dcc.Checklist(
-    ["Low", "Mid", "High"], ["Low", "Mid", "High"], inline=True, id="depth-checklist"
+    options=[
+        {"label": "Low Depth Earthquakes", "value": "Low"},
+        {"label": "Mid Depth Earthquakes", "value": "Mid"},
+        {"label": "High Depth Earthquakes", "value": "High"},
+    ],
+    value=["Low", "Mid", "High"],
+    inline=True,
+    labelStyle={"margin-right": "20px", "font-size": "16px"},
+    id="depth-checklist",
 )
 
 dropdown_options = [{"label": "All Countries", "value": "All Countries"}] + [
@@ -86,8 +89,11 @@ max_mag = df_earthquakes["magnitude"].max()
 min_mag = df_earthquakes["magnitude"].min()
 
 magnitude_slider = dcc.Slider(
-    vertical=True,
-    min=min_mag, max=max_mag, step=0.5, value=7.0, id="magnitude-slider"
+    min=min_mag,
+    max=max_mag,
+    step=0.5,
+    value=7.0,
+    id="magnitude-slider",
 )
 
 
@@ -95,107 +101,38 @@ magnitude_slider = dcc.Slider(
 ##<-- LAYOUT -->####
 ####################
 
-""" 
 app.layout = html.Div(
     children=[
         dcc.Markdown(children="# Earthquakes"),
-        dcc.Markdown(children="## Summary"),
-        html.Div(
-            [
-                pie_chart,
-            ]
-        ),
         html.Div(
             [
                 html.Label(
-                    "Magnitude Slider",
+                    "Years Slider",
                     style={"font-weight": "bold", "margin-bottom": "10px"},
                 ),
-                magnitude_slider,
-            ]
-        ),
-        dcc.Markdown(children="## Magnitude"),
-        html.Div(
-            [
-                dcc.Loading(
-                    id="loading-component",
-                    type="circle",
-                    children=[
-                        countries_dropdown,
-                        line_chart,
-                        bubble_map,
-                        html.Label(
-                            "Years Slider",
-                            style={"font-weight": "bold", "margin-bottom": "10px"},
-                        ),
-                        years_slider,
-                    ],
-                )
-            ]
-        ),
-        dcc.Markdown(children="## Depth"),
-        html.Div(
-            [
-                depth_checklist,
-                scatter_plot,
-                bar_chart,
-            ]
-        ),
-    ],
-    style={
-        "background-color": "#1a1a1a",
-        "color": "#ffffff",
-    },
-) """
-
-
-
-app.layout = html.Div(
-    children=[
-        dcc.Markdown(children="# Earthquakes"),
-        html.Div(
-            [
-                html.Label(
-                            "Years Slider",
-                            style={"font-weight": "bold", "margin-bottom": "10px"},
-                        ),
                 years_slider,
                 countries_dropdown,
-                        
-                
             ]
         ),
         html.Div(
             [
                 line_chart,
             ]
-            ),
-        
-        dcc.Loading(
-                    id="loading-component",
-                    type="circle",
-                    children=[
-                        html.Div(
-                            [     
-                                bubble_map,
-                                pie_chart,
-                                html.Div(
-                                    [
-                                        html.Label(
-                                            "Magnitude Slider",
-                                            style={"font-weight": "bold", "margin-bottom": "10px"},
-                                        ),
-                                        magnitude_slider,
-
-                                    ]
-                                )
-                            ]
-                        ),
-                        
-                        
-                    ],
+        ),
+        html.Div(
+            [
+                bubble_map,
+                pie_chart,
+                html.Label(
+                    "Magnitude Slider",
+                    style={
+                        "font-weight": "bold",
+                        "margin-bottom": "10px",
+                    },
                 ),
-        
+                magnitude_slider,
+            ]
+        ),
         dcc.Markdown(children="## Depth"),
         html.Div(
             [
@@ -210,10 +147,6 @@ app.layout = html.Div(
         "color": "#ffffff",
     },
 )
-
-
-
-
 
 
 #######################
@@ -256,9 +189,8 @@ def update_bubble_map(selected_country, years_range):
         hover_data=["country", "date_time"],
         color_continuous_scale=px.colors.sequential.Oranges,
         size_max=15,
-         
     )
-    
+
     scatter_plot_fig = px.line(
         filtered_df,
         x="date_time",
