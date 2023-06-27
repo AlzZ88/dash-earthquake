@@ -93,15 +93,23 @@ magnitude_slider = dcc.Slider(
 
 app.layout = html.Div(
     children=[
-        dcc.Markdown(children="# Terremotos"),
-        dcc.Markdown(children="## Resumen"),
+        dcc.Markdown(children="# Earthquakes"),
+        dcc.Markdown(children="## Summary"),
         html.Div(
             [
                 pie_chart,
+            ]
+        ),
+        html.Div(
+            [
+                html.Label(
+                    "Magnitude Slider",
+                    style={"font-weight": "bold", "margin-bottom": "10px"},
+                ),
                 magnitude_slider,
             ]
         ),
-        dcc.Markdown(children="## Magnitud"),
+        dcc.Markdown(children="## Magnitude"),
         html.Div(
             [
                 dcc.Loading(
@@ -111,12 +119,16 @@ app.layout = html.Div(
                         countries_dropdown,
                         line_chart,
                         bubble_map,
+                        html.Label(
+                            "Years Slider",
+                            style={"font-weight": "bold", "margin-bottom": "10px"},
+                        ),
                         years_slider,
                     ],
                 )
             ]
         ),
-        dcc.Markdown(children="## Profundidad"),
+        dcc.Markdown(children="## Depth"),
         html.Div(
             [
                 depth_checklist,
@@ -256,41 +268,31 @@ def update_bar_chart(selected_country, years_range, selected_depth):
     Input("depth-checklist", "value"),
     Input("years-slider", "value"),
 )
-def update_scatter_chart(selected_country,selected_depth,years_range):
-    """ if selected_country == "All Countries":
-        
+def update_scatter_chart(selected_country, selected_depth, years_range):
+    """if selected_country == "All Countries":
+
     else:
         df_copy = df_earthquakes[(df_earthquakes["country"] == selected_country)]
-     """
-    
+    """
+
     df_copy = df_earthquakes.copy()
     if selected_country == "All Countries":
         years_df = df_copy[
-            (
-                df_copy["date_time"].dt.year.between(
-                    years_range[0], years_range[1]
-                )
-            )
+            (df_copy["date_time"].dt.year.between(years_range[0], years_range[1]))
         ]
     else:
         years_df = df_copy[
             (df_copy["country"] == selected_country)
-            & (
-                df_copy["date_time"].dt.year.between(
-                    years_range[0], years_range[1]
-                )
-            )
+            & (df_copy["date_time"].dt.year.between(years_range[0], years_range[1]))
         ]
-        
-        
+
     filtered_df = years_df[(df_earthquakes["depth_label"].isin(selected_depth))]
-    
 
     fig = px.scatter(
         filtered_df,
         x="depth",
         y="magnitude",
-       title=f"Distribution of earthquakes according to depth label in {selected_country} from {years_range[0]} to {years_range[1]} per depth label",
+        title=f"Distribution of earthquakes according to depth label in {selected_country} from {years_range[0]} to {years_range[1]} per depth label",
         color="depth_label",
     )
 
@@ -316,9 +318,6 @@ def update_pie_chart(years_range, selected_magnitude):
     filtered_df = (
         filtered_df.groupby(["country"]).size().reset_index(name="count").head(5)
     )
-
-
-
 
     fig = px.pie(
         filtered_df,
