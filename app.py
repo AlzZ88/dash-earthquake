@@ -186,18 +186,32 @@ def update_bubble_map(selected_country, years_range):
 @app.callback(
     Output("bar-chart", "figure"),
     Input("countries-dropdown", "value"),
+    Input("years-slider", "value"),
     Input("depth-checklist", "value"),
 )
-def update_bar_chart(selected_country, selected_depth):
+def update_bar_chart(selected_country, years_range, selected_depth):
     if selected_country == "All Countries":
-        df_copy = df_earthquakes.copy()
+        filtered_df = df_earthquakes[
+            (
+                df_earthquakes["date_time"].dt.year.between(
+                    years_range[0], years_range[1]
+                )
+            )
+        ]
     else:
-        df_copy = df_earthquakes[(df_earthquakes["country"] == selected_country)]
+        filtered_df = df_earthquakes[
+            (df_earthquakes["country"] == selected_country)
+            & (
+                df_earthquakes["date_time"].dt.year.between(
+                    years_range[0], years_range[1]
+                )
+            )
+        ]
 
-    df_copy["year"] = df_copy["date_time"].dt.year
+    filtered_df["year"] = filtered_df["date_time"].dt.year
 
     df_counts_per_year_and_depth = (
-        df_copy.groupby(["year", "depth_label"]).size().reset_index(name="count")
+        filtered_df.groupby(["year", "depth_label"]).size().reset_index(name="count")
     )
 
     df_rearranged_counts_per_year = df_counts_per_year_and_depth.pivot(
@@ -206,20 +220,28 @@ def update_bar_chart(selected_country, selected_depth):
 
     desired_order = ["Low", "Mid", "High"]
 
-    df_rearranged_counts_per_year = df_rearranged_counts_per_year[desired_order]
-
     selected_columns = [
-        col for col in df_rearranged_counts_per_year.columns if col in selected_depth
+        col
+        for col in desired_order
+        if col in selected_depth and col in df_rearranged_counts_per_year.columns
     ]
 
-    fig = px.bar(
-        df_rearranged_counts_per_year,
-        x=df_rearranged_counts_per_year.index,
-        y=selected_columns,
-        title="Number of Earthquakes per Year",
-        labels={"x": "Year", "y": "Count"},
-        barmode="stack",
-    )
+    df_rearranged_counts_per_year = df_rearranged_counts_per_year[selected_columns]
+
+    if df_rearranged_counts_per_year.empty:
+        fig = px.bar()
+        fig.update_layout(
+            title="Empty Bar Chart",
+        )
+    else:
+        fig = px.bar(
+            df_rearranged_counts_per_year,
+            x=df_rearranged_counts_per_year.index,
+            y=selected_columns,
+            title="Number of Earthquakes per Year",
+            labels={"x": "Year", "y": "Count"},
+            barmode="stack",
+        )
 
     return fig
 
