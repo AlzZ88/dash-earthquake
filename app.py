@@ -3,7 +3,11 @@ import dash_bootstrap_components as dbc  # pip install dash-bootstrap-components
 import plotly.express as px
 import pandas as pd
 
-
+#################################
+###Autores:-------------------###
+###-------*Matías Cacéres-----###
+###-------*Alejandro Sánchez--###
+#################################
 app = Dash(__name__, external_stylesheets=[dbc.themes.VAPOR])
 
 
@@ -274,11 +278,6 @@ def update_bar_chart(selected_country, years_range, selected_depth):
     Input("years-slider", "value"),
 )
 def update_scatter_chart(selected_country, selected_depth, years_range):
-    """if selected_country == "All Countries":
-
-    else:
-        df_copy = df_earthquakes[(df_earthquakes["country"] == selected_country)]
-    """
 
     df_copy = df_earthquakes.copy()
     if selected_country == "All Countries":
